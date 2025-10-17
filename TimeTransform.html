@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MVP时区转换器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #e6e6e6;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+            color: white;
+        }
+
+        .search-input:focus {
+            border-color: #00bcd4;
+            box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.2);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00bcd4;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
+        }
+
+        .search-btn:hover {
+            background: #00acc1;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .search-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .quick-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .quick-btn {
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #e6e6e6;
+        }
+
+        .quick-btn:hover {
+            background: rgba(0, 188, 212, 0.3);
+            border-color: rgba(0, 188, 212, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .result-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .city-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .time-diff {
+            font-size: 14px;
+            color: #00bcd4;
+            background: rgba(0, 188, 212, 0.15);
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+
+        .time-display {
+            font-size: 32px;
+            font-weight: 300;
+            color: white;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
+        .date-display {
+            font-size: 14px;
+            color: #a0a0a0;
+            margin-bottom: 15px;
+        }
+
+        .day-night-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .day-night-indicator.day {
+            background: rgba(241, 196, 15, 0.15);
+            color: #f1c40f;
+        }
+
+        .day-night-indicator.night {
+            background: rgba(52, 152, 219, 0.15);
+            color: #3498db;
+        }
+
+        .beijing-time {
+            background: linear-gradient(135deg, #00bcd4 0%, #008ba3 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .beijing-time h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .beijing-time .time {
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 5px;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .beijing-time .date {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(30, 30, 46, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 5px;
+        }
+
+        .suggestion-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+            color: #e6e6e6;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(0, 188, 212, 0.2);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .time-display {
+                font-size: 28px;
+            }
+            
+            .quick-select {
+                gap: 8px;
+            }
+            
+            .quick-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 时区转换器</h1>
+            <p>快速查询全球时间，看球赛、旅行必备</p>
+        </div>
+
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="输入城市名（如：纽约、伦敦）">
+            <button class="search-btn" onclick="searchTimezone()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+            </button>
+            <div class="suggestions" id="suggestions"></div>
+        </div>
+
+        <div class="quick-select">
+            <button class="quick-btn" onclick="quickSelect('New York')">纽约</button>
+            <button class="quick-btn" onclick="quickSelect('London')">伦敦</button>
+            <button class="quick-btn" onclick="quickSelect('Tokyo')">东京</button>
+            <button class="quick-btn" onclick="quickSelect('Sydney')">悉尼</button>
+            <button class="quick-btn" onclick="quickSelect('Paris')">巴黎</button>
+        </div>
+
+        <div id="resultContainer"></div>
+
+        <div class="beijing-time">
+            <h3>🇨🇳 北京时间</h3>
+            <div class="time" id="beijingTime"></div>
+            <div class="date" id="beijingDate"></div>
+        </div>
+    </div>
+
+    <script>
+        // 城市时区数据库
+        const cityTimezones = {
+            '纽约': 'America/New_York',
+            '伦敦': 'Europe/London',
+            '东京': 'Asia/Tokyo',
+            '悉尼': 'Australia/Sydney',
+            '巴黎': 'Europe/Paris',
+            '洛杉矶': 'America/Los_Angeles',
+            '新加坡': 'Asia/Singapore',
+            '迪拜': 'Asia/Dubai',
+            '莫斯科': 'Europe/Moscow',
+            '首尔': 'Asia/Seoul',
+            '新德里': 'Asia/Kolkata',
+            '开罗': 'Africa/Cairo',
+            '里约': 'America/Sao_Paulo',
+            '多伦多': 'America/Toronto',
+            '柏林': 'Europe/Berlin',
+            '罗马': 'Europe/Rome',
+            '马德里': 'Europe/Madrid',
+            '阿姆斯特丹': 'Europe/Amsterdam',
+            '苏黎世': 'Europe/Zurich',
+            '斯德哥尔摩': 'Europe/Stockholm',
+            '哥本哈根': 'Europe/Copenhagen',
+            '赫尔辛基': 'Europe/Helsinki',
+            '奥斯陆': 'Europe/Oslo',
+            '维也纳': 'Europe/Vienna',
+            '布鲁塞尔': 'Europe/Brussels',
+            '雅典': 'Europe/Athens',
+            '伊斯坦布尔': 'Europe/Istanbul',
+            '特拉维夫': 'Asia/Tel_Aviv',
+            '约翰内斯堡': 'Africa/Johannesburg',
+            '墨西哥城': 'America/Mexico_City',
+            '温哥华': 'America/Vancouver',
+            '芝加哥': 'America/Chicago',
+            '迈阿密': 'America/New_York',
+            '西雅图': 'America/Los_Angeles',
+            '拉斯维加斯': 'America/Los_Angeles',
+            '旧金山': 'America/Los_Angeles',
+            '波士顿': 'America/New_York',
+            '华盛顿': 'America/New_York',
+            '费城': 'America/New_York',
+            '亚特兰大': 'America/New_York',
+            '达拉斯': 'America/Chicago',
+            '休斯顿': 'America/Chicago',
+            '凤凰城': 'America/Denver',
+            '丹佛': 'America/Denver',
+            '明尼阿波利斯': 'America/Chicago',
+            '底特律': 'America/New_York',
+            '丹佛': 'America/Denver',
+            '波特兰': 'America/Los_Angeles',
+            '圣迭戈': 'America/Los_Angeles',
+            '香港': 'Asia/Hong_Kong',
+            '台北': 'Asia/Taipei',
+            '曼谷': 'Asia/Bangkok',
+            '雅加达': 'Asia/Jakarta',
+            '马尼拉': 'Asia/Manila',
+            '胡志明市': 'Asia/Ho_Chi_Minh',
+            '吉隆坡': 'Asia/Kuala_Lumpur',
+            '仰光': 'Asia/Yangon',
+            '达卡': 'Asia/Dhaka',
+            '卡拉奇': 'Asia/Karachi',
+            '孟买': 'Asia/Kolkata',
+            '德里': 'Asia/Kolkata',
+            '班加罗尔': 'Asia/Kolkata',
+            '金奈': 'Asia/Kolkata',
+            '加尔各答': 'Asia/Kolkata',
+            '海得拉巴': 'Asia/Kolkata',
+            '浦那': 'Asia/Kolkata',
+            '阿默达巴德': 'Asia/Kolkata',
+            '安卡拉': 'Europe/Istanbul',
+            '利雅得': 'Asia/Riyadh',
+            '德黑兰': 'Asia/Tehran',
+            '巴格达': 'Asia/Baghdad',
+            '科威特城': 'Asia/Kuwait',
+            '多哈': 'Asia/Qatar',
+            '阿布扎比': 'Asia/Dubai',
+            '马斯喀特': 'Asia/Muscat',
+            '萨那': 'Asia/Sanaa',
+            '贝鲁特': 'Asia/Beirut',
+            '大马士革': 'Asia/Damascus',
+            '安曼': 'Asia/Amman',
+            '耶路撒冷': 'Asia/Jerusalem',
+            '麦加': 'Asia/Riyadh',
+            '麦地那': 'Asia/Riyadh',
+            '阿勒颇': 'Asia/Damascus',
+            '巴士拉': 'Asia/Baghdad',
+            '摩苏尔': 'Asia/Baghdad',
+            '基辅': 'Europe/Kiev',
+            '明斯克': 'Europe/Minsk',
+            '布加勒斯特': 'Europe/Bucharest',
+            '索菲亚': 'Europe/Sofia',
+            '贝尔格莱德': 'Europe/Belgrade',
+            '萨格勒布': 'Europe/Zagreb',
+            '布达佩斯': 'Europe/Budapest',
+            '布拉迪斯拉发': 'Europe/Bratislava',
+            '布拉格': 'Europe/Prague',
+            '华沙': 'Europe/Warsaw',
+            '维尔纽斯': 'Europe/Vilnius',
+            '里加': 'Europe/Riga',
+            '塔林': 'Europe/Tallinn',
+            '第比利斯': 'Asia/Tbilisi',
+            '埃里温': 'Asia/Yerevan',
+            '巴库': 'Asia/Baku',
+            '阿斯塔纳': 'Asia/Almaty',
+            '塔什干': 'Asia/Tashkent',
+            '杜尚别': 'Asia/Dushanbe',
+            '比什凯克': 'Asia/Bishkek',
+            '阿什哈巴德': 'Asia/Ashgabat',
+            '乌兰巴托': 'Asia/Ulaanbaatar',
+            '平壤': 'Asia/Pyongyang',
+            '澳门': 'Asia/Macau',
+            '阿拉木图': 'Asia/Almaty',
+            '符拉迪沃斯托克': 'Asia/Vladivostok',
+            '新西伯利亚': 'Asia/Novosibirsk',
+            '叶卡捷琳堡': 'Asia/Yekaterinburg',
+            '喀山': 'Europe/Moscow',
+            '下诺夫哥罗德': 'Europe/Moscow',
+            '顿河畔罗斯托夫': 'Europe/Moscow',
+            '乌法': 'Europe/Moscow',
+            '萨马拉': 'Europe/Moscow',
+            '彼尔姆': 'Europe/Moscow',
+            '伏尔加格勒': 'Europe/Moscow',
+            '克拉斯诺亚尔斯克': 'Asia/Krasnoyarsk',
+            '伊尔库茨克': 'Asia/Irkutsk',
+            '雅库茨克': 'Asia/Yakutsk',
+            '马加丹': 'Asia/Magadan',
+            '堪察加彼得罗巴甫洛夫斯克': 'Asia/Kamchatka',
+            '阿纳德尔': 'Asia/Anadyr',
+            '奥克兰': 'Pacific/Auckland',
+            '惠灵顿': 'Pacific/Auckland',
+            '基督城': 'Pacific/Auckland',
+            '努美阿': 'Pacific/Noumea',
+            '苏瓦': 'Pacific/Fiji',
+            '阿皮亚': 'Pacific/Apia',
+            '帕果帕果': 'Pacific/Pago_Pago',
+            '火奴鲁鲁': 'Pacific/Honolulu',
+            '安克雷奇': 'America/Anchorage',
+            '费尔班克斯': 'America/Anchorage',
+            '朱诺': 'America/Juneau',
+            '白令海峡': 'America/Nome',
+            '圣保罗': 'America/Sao_Paulo',
+            '里约热内卢': 'America/Sao_Paulo',
+            '巴西利亚': 'America/Sao_Paulo',
+            '萨尔瓦多': 'America/Bahia',
+            '福塔雷萨': 'America/Fortaleza',
+            '贝洛奥里藏特': 'America/Sao_Paulo',
+            '阿雷格里港': 'America/Sao_Paulo',
+            '库里蒂巴': 'America/Sao_Paulo',
+            '累西腓': 'America/Recife',
+            '马瑙斯': 'America/Manaus',
+            '贝伦': 'America/Belem',
+            '卡宴': 'America/Cayenne',
+            '布宜诺斯艾利斯': 'America/Argentina/Buenos_Aires',
+            '科尔多瓦': 'America/Argentina/Cordoba',
+            '罗萨里奥': 'America/Argentina/Cordoba',
+            '门多萨': 'America/Argentina/Mendoza',
+            '拉普拉塔': 'America/Argentina/Buenos_Aires',
+            '马德普拉塔': 'America/Argentina/Buenos_Aires',
+            '圣地亚哥': 'America/Santiago',
+            '瓦尔帕莱索': 'America/Santiago',
+            '康塞普西翁': 'America/Santiago',
+            '拉塞雷纳': 'America/Santiago',
+            '安托法加斯塔': 'America/Santiago',
+            '伊基克': 'America/Santiago',
+            '蓬塔阿雷纳斯': 'America/Punta_Arenas',
+            '利马': 'America/Lima',
+            '阿雷基帕': 'America/Lima',
+            '特鲁希略': 'America/Lima',
+            '库斯科': 'America/Lima',
+            '卡亚俄': 'America/Lima',
+            '基多': 'America/Guayaquil',
+            '瓜亚基尔': 'America/Guayaquil',
+            '拉巴斯': 'America/La_Paz',
+            '圣克鲁斯': 'America/La_Paz',
+            '科恰班巴': 'America/La_Paz',
+            '苏克雷': 'America/La_Paz',
+            '波哥大': 'America/Bogota',
+            '麦德林': 'America/Bogota',
+            '卡利': 'America/Bogota',
+            '巴兰基亚': 'America/Bogota',
+            '卡塔赫纳': 'America/Bogota',
+            '蒙特雷': 'America/Monterrey',
+            '瓜达拉哈拉': 'America/Mexico_City',
+            '普埃布拉': 'America/Mexico_City',
+            '蒂华纳': 'America/Tijuana',
+            '华雷斯城': 'America/Ojinaga',
+            '莱昂': 'America/Mexico_City',
+            '坎昆': 'America/Cancun',
+            '梅里达': 'America/Merida',
+            '阿卡普尔科': 'America/Mexico_City',
+            '韦拉克鲁斯': 'America/Mexico_City',
+            '哈瓦那': 'America/Havana',
+            '太子港': 'America/Port-au-Prince',
+            '圣多明各': 'America/Santo_Domingo',
+            '金斯敦': 'America/Jamaica',
+            '西班牙港': 'America/Port_of_Spain',
+            '布里奇顿': 'America/Barbados',
+            '拿骚': 'America/Nassau',
+            '贝尔莫潘': 'America/Belize',
+            '圣何塞': 'America/Costa_Rica',
+            '巴拿马城': 'America/Panama',
+            '马那瓜': 'America/Managua',
+            '圣萨尔瓦多': 'America/El_Salvador',
+            '危地马拉城': 'America/Guatemala',
+            '特古西加尔巴': 'America/Tegucigalpa'
+        };
+
+        // 常用城市列表
+        const popularCities = ['纽约', '伦敦', '东京', '悉尼', '巴黎', '洛杉矶', '新加坡', '迪拜', '莫斯科', '首尔'];
+
+        // 初始化
+        function init() {
+            updateBeijingTime();
+            setInterval(updateBeijingTime, 1000);
+            
+            // 设置默认显示纽约
+            searchCity('纽约');
+            
+            // 绑定输入事件
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', showSuggestions);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchTimezone();
+                }
+            });
+            
+            // 点击其他地方隐藏建议
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-box')) {
+                    document.getElementById('suggestions').style.display = 'none';
+                }
+            });
+        }
+
+        // 更新北京时间
+        function updateBeijingTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
+            
+            document.getElementById('beijingTime').textContent = timeStr;
+            document.getElementById('beijingDate').textContent = dateStr;
+        }
+
+        // 显示搜索建议
+        function showSuggestions() {
+            const input = document.getElementById('searchInput').value.trim();
+            const suggestionsDiv = document.getElementById('suggestions');
+            
+            if (input.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            const matches = Object.keys(cityTimezones).filter(city => 
+                city.toLowerCase().includes(input.toLowerCase())
+            ).slice(0, 5);
+            
+            if (matches.length > 0) {
+                suggestionsDiv.innerHTML = matches.map(city => 
+                    `<div class="suggestion-item" onclick="selectSuggestion('${city}')">${city}</div>`
+                ).join('');
+                suggestionsDiv.style.display = 'block';
+            } else {
+                suggestionsDiv.style.display = 'none';
+            }
+        }
+
+        // 选择建议
+        function selectSuggestion(city) {
+            document.getElementById('searchInput').value = city;
+            document.getElementById('suggestions').style.display = 'none';
+            searchCity(city);
+        }
+
+        // 快速选择
+        function quickSelect(city) {
+            document.getElementById('searchInput').value = city;
+            searchCity(city);
+        }
+
+        // 搜索时区
+        function searchTimezone() {
+            const input = document.getElementById('searchInput').value.trim();
+            if (input) {
+                searchCity(input);
+            }
+        }
+
+        // 搜索城市
+        function searchCity(cityName) {
+            const timezone = cityTimezones[cityName];
+            if (!timezone) {
+                showError('未找到该城市，请尝试输入其他城市');
+                return;
+            }
+            
+            displayResult(cityName, timezone);
+            document.getElementById('suggestions').style.display = 'none';
+        }
+
+        // 显示结果
+        function displayResult(cityName, timezone) {
+            const now = new Date();
+            
+            // 获取当地时间
+            const localTime = new Date(now.toLocaleString("en-US", {timeZone: timezone}));
+            const beijingTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Shanghai"}));
+            
+            // 计算时间差
+            const diffMs = localTime - beijingTime;
+            const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+            const timeDiff = diffHours > 0 ? `+${diffHours}小时` : `${diffHours}小时`;
+            
+            // 格式化时间
+            const timeStr = localTime.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            });
+            
+            const dateStr = localTime.toLocaleDateString('zh-CN', { 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            });
+            
+            // 判断白天黑夜
+            const hour = localTime.getHours();
+            const isDay = hour >= 6 && hour < 18;
+            const dayNightText = isDay ? '☀️ 白天' : '🌙 夜晚';
+            
+            // 获取城市对应的emoji
+            const cityEmojis = {
+                '纽约': '🇺🇸', '伦敦': '🇬🇧', '东京': '🇯🇵', '悉尼': '🇦🇺', '巴黎': '🇫🇷',
+                '洛杉矶': '🇺🇸', '新加坡': '🇸🇬', '迪拜': '🇦🇪', '莫斯科': '🇷🇺', '首尔': '🇰🇷'
+            };
+            const emoji = cityEmojis[cityName] || '🌍';
+            
+            // 显示结果
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.innerHTML = `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="city-name">${emoji} ${cityName}</div>
+                        <div class="time-diff">时差 ${timeDiff}</div>
+                    </div>
+                    <div class="time-display">${timeStr}</div>
+                    <div class="date-display">${dateStr}</div>
+                    <div class="day-night-indicator ${isDay ? 'day' : 'night'}">${dayNightText}</div>
+                </div>
+            `;
+            
+            // 添加显示动画
+            setTimeout(() => {
+                document.querySelector('.result-card').classList.add('show');
+            }, 100);
+        }
+
+        // 显示错误
+        function showError(message) {
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.innerHTML = `
+                <div class="result-card">
+                    <div style="text-align: center; color: #e74c3c;">
+                        <p>${message}</p>
+                    </div>
+                </div>
+            `;
+            document.querySelector('.result-card').classList.add('show');
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
